@@ -1,57 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from './services/api';
-import { useCart } from './hooks/useCart';
+import React, { useEffect } from 'react';
 import ProductList from './components/ProductList';
 import Cart from './components/Cart';
 import OrderConfirmationModal from './components/OrderConfirmationModal';
 import './App.css';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts, selectProducts, selectLoading, selectError } from './store/productsSlice';
+import { addToCart, updateQuantity, removeFromCart, clearCart, selectCartItems, selectTotalItems, selectTotalPrice } from './store/cartSlice';
+import { openModal, closeModal, selectShowModal } from './store/uiSlice';
 
 function App() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-  const {
-    cartItems,
-    addToCart,
-    updateQuantity,
-    removeFromCart,
-    clearCart,
-    getTotalItems,
-    getTotalPrice,
-    getItemQuantity
-  } = useCart();
+  const dispatch = useDispatch();
+  const products = useSelector(selectProducts);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  const cartItems = useSelector(selectCartItems);
+  const totalItems = useSelector(selectTotalItems);
+  const totalPrice = useSelector(selectTotalPrice);
+  const showModal = useSelector(selectShowModal);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const desserts = await apiService.getDesserts();
-        setProducts(desserts);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load products. Please try again later.');
-        console.error('Error fetching products:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
-    fetchProducts();
-  }, []);
+  const getItemQuantity = (productId) => {
+    const item = cartItems.find(item => item.id === productId);
+    return item ? item.quantity : 0;
+  };
 
   const handleConfirmOrder = () => {
-    setShowModal(true);
+    dispatch(openModal());
   };
 
   const handleStartNewOrder = () => {
-    clearCart();
-    setShowModal(false);
+    dispatch(clearCart());
+    dispatch(closeModal());
   };
 
   const handleCloseModal = () => {
-    setShowModal(false);
+    dispatch(closeModal());
   };
 
   if (loading) {
@@ -83,19 +69,19 @@ function App() {
         <main className="main-content">
           <ProductList
             products={products}
-            onAddToCart={addToCart}
+            onAddToCart={(product) => dispatch(addToCart(product))}
             getItemQuantity={getItemQuantity}
-            onUpdateQuantity={updateQuantity}
+            onUpdateQuantity={(productId, newQuantity) => dispatch(updateQuantity({ productId, newQuantity }))}
           />
         </main>
         
         <aside className="sidebar">
           <Cart
             cartItems={cartItems}
-            totalItems={getTotalItems()}
-            totalPrice={getTotalPrice()}
-            onUpdateQuantity={updateQuantity}
-            onRemoveItem={removeFromCart}
+            totalItems={totalItems}
+            totalPrice={totalPrice}
+            onUpdateQuantity={(productId, newQuantity) => dispatch(updateQuantity({ productId, newQuantity }))}
+            onRemoveItem={(productId) => dispatch(removeFromCart(productId))}
             onConfirmOrder={handleConfirmOrder}
           />
         </aside>
@@ -104,7 +90,7 @@ function App() {
       <OrderConfirmationModal
         isOpen={showModal}
         cartItems={cartItems}
-        totalPrice={getTotalPrice()}
+        totalPrice={totalPrice}
         onStartNewOrder={handleStartNewOrder}
         onClose={handleCloseModal}
       />

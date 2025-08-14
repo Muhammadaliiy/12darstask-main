@@ -6,7 +6,7 @@ export const apiService = {
       const response = await fetch(`${API_BASE_URL}/desserts`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
-      }6
+      }
 
       const data = await response.json();
       const desserts = data.data.map(item => ({

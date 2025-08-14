@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectIsImageErrorById, setImageError } from '../store/uiSlice';
 
 const ProductCard = ({ product, onAddToCart, quantity, onUpdateQuantity }) => {
-  const [imageError, setImageError] = useState(false);
+  const dispatch = useDispatch();
+  const imageError = useSelector((state) => selectIsImageErrorById(state, product.id));
 
   const handleAddToCart = () => {
     onAddToCart(product);
@@ -16,7 +19,7 @@ const ProductCard = ({ product, onAddToCart, quantity, onUpdateQuantity }) => {
   };
 
   const handleImageError = () => {
-    setImageError(true);
+    dispatch(setImageError(product.id));
   };
 
   const getImageElement = () => {
